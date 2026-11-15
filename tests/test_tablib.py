@@ -1370,6 +1370,46 @@ class ODSTests(BaseTestCase):
 
 
 class XLSTests(BaseTestCase):
+    def test_xls_import_preserves_boolean_types(self):
+        source = tablib.Dataset(
+            (True, False, 1, 0), headers=['yes', 'no', 'one', 'zero'],
+        )
+        restored = tablib.Dataset().load(source.xls, 'xls')
+
+        self.assertIs(restored[0][0], True)
+        self.assertIs(restored[0][1], False)
+        self.assertIs(type(restored[0][2]), float)
+        self.assertIs(type(restored[0][3]), float)
+        self.assertEqual(restored[0][2:], (1.0, 0.0))
+        values = json.loads(restored.json)[0]
+        self.assertIs(values['yes'], True)
+        self.assertIs(values['no'], False)
+        self.assertIs(type(values['one']), float)
+        self.assertIs(type(values['zero']), float)
+
+    def test_xls_book_import_preserves_boolean_types(self):
+        source = tablib.Dataset(
+            (True, False, 1, 0), headers=['yes', 'no', 'one', 'zero'],
+        )
+        restored = tablib.Databook().load(tablib.Databook([source]).xls, 'xls')
+        dataset = restored.sheets()[0]
+
+        self.assertIs(dataset[0][0], True)
+        self.assertIs(dataset[0][1], False)
+        self.assertIs(type(dataset[0][2]), float)
+        self.assertIs(type(dataset[0][3]), float)
+        self.assertEqual(dataset[0][2:], (1.0, 0.0))
+        values = json.loads(dataset.json)[0]
+        self.assertIs(values['yes'], True)
+        self.assertIs(values['no'], False)
+        self.assertIs(type(values['one']), float)
+        self.assertIs(type(values['zero']), float)
+        book_values = json.loads(restored.json)[0]['data'][0]
+        self.assertIs(book_values['yes'], True)
+        self.assertIs(book_values['no'], False)
+        self.assertIs(type(book_values['one']), float)
+        self.assertIs(type(book_values['zero']), float)
+
     def test_xls_format_detect(self):
         """Test the XLS format detection."""
         in_stream = self.founders.xls
